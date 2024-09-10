@@ -25,4 +25,5 @@ options:
   -t THREAD, --thread THREAD
                         threads for sbatch, default=12
 ```
-> Notice: cmd list file can contain empty lines, and every line start with "#" will be dropped, commands for each job must within one line.
+> Notice: cmd list file can contain empty lines, and every line start with "#" will be dropped, 
+> commands for each job must be written in one line.
