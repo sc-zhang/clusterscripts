@@ -16,10 +16,12 @@ header = '''#!/bin/bash
 
 def get_opts():
     group = argparse.ArgumentParser()
-    group.add_argument("-c", "--cmd", help="Input cmd list file, each line contain one command for sbatch", required=True)
-    group.add_argument("-q", "--queue", help="Submit queue, default=low", type=str, default="low")
-    group.add_argument("-b", "--batch", help="Prefix of batch files, auto increasing, default=run", type=str, default="run")
-    group.add_argument("-l", "--log", help="Prefix of log files, auto increasing, default=log", type=str, default="log")
+    group.add_argument("-c", "--cmd", help="Input cmd list file, each line contain one command for sbatch", 
+                       required=True)
+    group.add_argument("-q", "--queue", help="Submit queue, default=arm", type=str, default="arm")
+    group.add_argument("-b", "--batch", help="Prefix of batch files, auto increasing, default=run", type=str, 
+                       default="run")
+    group.add_argument("-l", "--log", help="Prefix of log files, auto increasing, default same with batch")
     group.add_argument("-t", "--thread", help="threads for sbatch, default=12", type=int, default=12)
     return group.parse_args()
 
@@ -60,6 +62,7 @@ if __name__ == "__main__":
     queue = opts.queue
     batch_pre = opts.batch
     log_pre = opts.log
+    if not log_pre:
+        log_pre = batch_pre
     threads = opts.thread
     ssbatch(cmd_file, queue, batch_pre, log_pre, threads)
-    
