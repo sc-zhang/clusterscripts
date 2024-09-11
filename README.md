@@ -10,9 +10,9 @@ chmod +x bin/*.*
 
 # Usage
 
-- **ssbatch.py:** A script for SLURM users, it will automatically generate batch files and submit them to the job manager.
+- **bsub:** A script for SLURM/SGE/TORQUE users, it will automatically generate batch files and submit them to the job manager.
 ```bash
-usage: ssbatch.py [-h] -c CMD [-q QUEUE] [-b BATCH] [-l LOG] [-t THREAD]
+usage: bsub [-h] -c CMD [-q QUEUE] [-b BATCH] [-g {slurm,sge,torque}] [-l LOG] [-t THREAD]
 
 options:
   -h, --help            show this help message and exit
@@ -21,7 +21,9 @@ options:
                         Submit queue, default=low
   -b BATCH, --batch BATCH
                         Prefix of batch files, auto increasing, default=run
-  -l LOG, --log LOG     Prefix of log files, auto increasing, default=log
+  -g {slurm,sge,torque}, --grid {slurm,sge,torque}
+                        Grid engine, could be slurm, sge, torque, default=slurm
+  -l LOG, --log LOG     Prefix of log files, auto increasing, default same with batch
   -t THREAD, --thread THREAD
                         threads for sbatch, default=12
 ```
