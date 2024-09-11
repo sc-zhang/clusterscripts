@@ -10,7 +10,8 @@ chmod +x bin/*.*
 
 # Usage
 
-- **bsub:** A script for SLURM/SGE/TORQUE users, it will automatically generate batch files and submit them to the job manager.
+- **bsub:** A script for SLURM/SGE/TORQUE users, it will automatically generate batch files with a command list file 
+and submit them to the job scheduler.
 ```bash
 usage: bsub [-h] -c CMD [-q QUEUE] [-b BATCH] [-g {slurm,sge,torque}] [-l LOG] [-t THREAD]
 
