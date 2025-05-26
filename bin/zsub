@@ -2,7 +2,7 @@
 import argparse
 import os
 
-SLURM_HEADER = '''#!/bin/bash
+SLURM_HEADER = """#!/bin/bash
 #SBATCH -J %s
 #SBATCH -p %s
 #SBATCH -N 1
@@ -10,9 +10,9 @@ SLURM_HEADER = '''#!/bin/bash
 #SBATCH --comment=no
 #SBATCH -o %s.out
 #SBATCH -e %s.err
-'''
+"""
 
-SGE_HEADER = '''#!/bin/bash
+SGE_HEADER = """#!/bin/bash
 #$ -cwd
 #$ -S /bin/bash
 #$ -N %s
@@ -20,9 +20,9 @@ SGE_HEADER = '''#!/bin/bash
 #$ -pe mpi %d
 #$ -o %s.out
 #$ -e %s.err
-'''
+"""
 
-TORQUE_HEADER = '''#!/bin/bash
+TORQUE_HEADER = """#!/bin/bash
 #PBS -N %s
 #PBS -q %s
 #PBS -l nodes=1:ppn=%d
@@ -30,47 +30,104 @@ TORQUE_HEADER = '''#!/bin/bash
 #PBS -e %s.err
 
 cd $PBS_O_WORKDIR
-'''
+"""
 
 
 def get_opts():
     group = argparse.ArgumentParser()
-    group.add_argument("-c", "--cmd", help="Input cmd list file, each line contain one command for sbatch",
-                       required=True)
-    group.add_argument("-q", "--queue", help="Submit queue, default=low", type=str, default="low")
-    group.add_argument("-b", "--batch", help="Prefix of batch files, auto increasing, default=run", type=str,
-                       default="run")
-    group.add_argument("-g", "--grid", help="Grid engine, could be slurm, sge, torque, default=slurm",
-                       default="slurm", choices=["slurm", "sge", "torque"])
-    group.add_argument("-l", "--log", help="Prefix of log files, auto increasing, default same with batch")
-    group.add_argument("-t", "--thread", help="threads for sbatch, default=12", type=int, default=12)
+    group.add_argument(
+        "-c",
+        "--cmd",
+        help="Input cmd list file, each line contain one command for sbatch",
+        required=True,
+    )
+    group.add_argument(
+        "-q", "--queue", help="Submit queue, default=low", type=str, default="low"
+    )
+    group.add_argument(
+        "-b",
+        "--batch",
+        help="Prefix of batch files, auto increasing, default=run",
+        type=str,
+        default="run",
+    )
+    group.add_argument(
+        "-g",
+        "--grid",
+        help="Grid engine, could be slurm, sge, torque, default=slurm",
+        default="slurm",
+        choices=["slurm", "sge", "torque"],
+    )
+    group.add_argument(
+        "-p",
+        "--part",
+        help="Split cmd list part into several parts, default=0, "
+        "means each line one file",
+        type=int,
+        default=0,
+    )
+    group.add_argument(
+        "-l",
+        "--log",
+        help="Prefix of log files, auto increasing, default same with batch",
+    )
+    group.add_argument(
+        "-t", "--thread", help="threads for sbatch, default=12", type=int, default=12
+    )
     return group.parse_args()
 
 
-def batch_sub(cmd_file, queue, grid_engine, batch_pre, log_pre, threads):
+def batch_sub(cmd_file, queue, grid_engine, split_part, batch_pre, log_pre, threads):
     cmd_list = []
     print("Loading %s" % cmd_file)
-    with open(cmd_file, 'r') as fin:
+    with open(cmd_file, "r") as fin:
         for line in fin:
             if line.strip() == "" or line[0] == "#":
                 continue
             cmd_list.append(line.strip())
 
+    cmd_cnt = len(cmd_list)
+    if split_part == 0:
+        cmd_per_part = 1
+    else:
+        cmd_per_part = int(round(cmd_cnt * 1.0 / split_part, 0))
+
+    splitted_cmd_list = []
+    for _ in range(split_part):
+        if _ != split_part - 1:
+            splitted_cmd_list.append(
+                "\n".join(cmd_list[_ * cmd_per_part : (_ + 1) * cmd_per_part])
+            )
+        else:
+            splitted_cmd_list.append("\n".join(cmd_list[_ * cmd_per_part :]))
+
     print("Writing batch files")
     batch_list = []
     idx = 1
-    for cmd in cmd_list:
+    for cmd in splitted_cmd_list:
         job_name = "%s%d" % (batch_pre, idx)
         log_name = "%s%d" % (log_pre, idx)
         idx += 1
         batch_name = "%s.sh" % job_name
-        with open(batch_name, 'w') as fout:
+        with open(batch_name, "w") as fout:
             if grid_engine.upper() == "SLURM":
-                cur_header = SLURM_HEADER % (job_name, queue, threads, log_name, log_name)
+                cur_header = SLURM_HEADER % (
+                    job_name,
+                    queue,
+                    threads,
+                    log_name,
+                    log_name,
+                )
             elif grid_engine.upper() == "SGE":
                 cur_header = SGE_HEADER % (job_name, queue, threads, log_name, log_name)
             elif grid_engine.upper() == "TORQUE":
-                cur_header = TORQUE_HEADER % (job_name, queue, threads, log_name, log_name)
+                cur_header = TORQUE_HEADER % (
+                    job_name,
+                    queue,
+                    threads,
+                    log_name,
+                    log_name,
+                )
 
             fout.write("%s\n%s\n" % (cur_header, cmd))
         batch_list.append(batch_name)
@@ -93,10 +150,11 @@ if __name__ == "__main__":
     opts = get_opts()
     cmd_file = opts.cmd
     queue = opts.queue
+    split_part = opts.part
     batch_pre = opts.batch
     log_pre = opts.log
     grid_engine = opts.grid
     if not log_pre:
         log_pre = batch_pre
     threads = opts.thread
-    batch_sub(cmd_file, queue, grid_engine, batch_pre, log_pre, threads)
+    batch_sub(cmd_file, queue, grid_engine, split_part, batch_pre, log_pre, threads)
