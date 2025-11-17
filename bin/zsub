@@ -145,7 +145,7 @@ def batch_sub(cmd_file, queue, grid_engine, split_part, batch_pre, log_pre, thre
 
     for job in batch_list:
         cmd = "%s %s" % (submitter, job)
-        # os.system(cmd)
+        os.system(cmd)
 
     print("Finished")
 
