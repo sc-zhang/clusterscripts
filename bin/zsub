@@ -87,6 +87,9 @@ def batch_sub(cmd_file, queue, grid_engine, split_part, batch_pre, log_pre, thre
             cmd_list.append(line.strip())
 
     cmd_cnt = len(cmd_list)
+    if split_part > cmd_cnt:
+        split_part = cmd_cnt
+
     cmd_split_idx = [0]
     if split_part <= 1:
         cmd_split_idx.append(cmd_cnt)
